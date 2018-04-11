@@ -2171,9 +2171,9 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 				if (m_errorInfo.missing_codec.find("video/") == 0 || (m_errorInfo.missing_codec.find("audio/") == 0 && m_audioStreams.empty()))
 					m_event((iPlayableService*)this, evUser+12);
 			}
-			/*+++*workaround for mp3 playback problem on some boxes - e.g. xtrend et9200 (if press stop and play or switch to the next track is the state 'playing', but plays not.
-			Restart the player-application or paused and then play the track fix this for once.)*/
-			/*if (!m_paused && codec_tofix)
+			/workaround for mp3 playback problem on some boxes - e.g. xtrend et9200 (if press stop and play or switch to the next track is the state 'playing', but plays not.
+			Restart the player-application or paused and then play the track fix this for once.)/
+			/if (!m_paused && codec_tofix)
 			{
 				std::string filename = "/proc/stb/info/boxtype";
 				FILE *f = fopen(filename.c_str(), "rb");
@@ -2195,8 +2195,7 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 						gst_element_set_state (m_gst_playbin, GST_STATE_PLAYING);
 					}
 				}
-			}*/
-			/*+++*/
+			}/
 			break;
 		}
 		case GST_MESSAGE_ELEMENT:
