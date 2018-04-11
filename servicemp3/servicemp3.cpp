@@ -1891,49 +1891,16 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 				case GST_STATE_CHANGE_PAUSED_TO_PLAYING:
 				{
 					m_paused = false;
-					if (m_currentAudioStream < 0)
-					{
-						unsigned int autoaudio = 0;
-						int autoaudio_level = 5;
-						std::string configvalue;
-						std::vector<std::string> autoaudio_languages;
-						configvalue = eConfigManager::getConfigValue("config.autolanguage.audio_autoselect1");
-						if (configvalue != "" && configvalue != "None")
-							autoaudio_languages.push_back(configvalue);
-						configvalue = eConfigManager::getConfigValue("config.autolanguage.audio_autoselect2");
-						if (configvalue != "" && configvalue != "None")
-							autoaudio_languages.push_back(configvalue);
-						configvalue = eConfigManager::getConfigValue("config.autolanguage.audio_autoselect3");
-						if (configvalue != "" && configvalue != "None")
-							autoaudio_languages.push_back(configvalue);
-						configvalue = eConfigManager::getConfigValue("config.autolanguage.audio_autoselect4");
-						if (configvalue != "" && configvalue != "None")
-							autoaudio_languages.push_back(configvalue);
-						for (unsigned int i = 0; i < m_audioStreams.size(); i++)
-						{
-							if (!m_audioStreams[i].language_code.empty())
-							{
-								int x = 1;
-								for (std::vector<std::string>::iterator it = autoaudio_languages.begin(); x < autoaudio_level && it != autoaudio_languages.end(); x++, it++)
-								{
-									if ((*it).find(m_audioStreams[i].language_code) != std::string::npos)
-									{
-										autoaudio = i;
-										autoaudio_level = x;
-										break;
-									}
-								}
-							}
-						}
-
-						if (autoaudio)
-							selectTrack(autoaudio);
-					}
-					m_event((iPlayableService*)this, evGstreamerPlayStarted);
+					if (!m_first_paused)
+						m_event((iPlayableService*)this, evGstreamerPlayStarted);
+					m_first_paused = false;
 				}	break;
 				case GST_STATE_CHANGE_PLAYING_TO_PAUSED:
 				{
 					m_paused = true;
+				}	break;
+				case GST_STATE_CHANGE_PAUSED_TO_READY:
+				{
 				}	break;
 				case GST_STATE_CHANGE_PAUSED_TO_READY:
 				{
@@ -2204,6 +2171,32 @@ void eServiceMP3::gstBusCall(GstMessage *msg)
 				if (m_errorInfo.missing_codec.find("video/") == 0 || (m_errorInfo.missing_codec.find("audio/") == 0 && m_audioStreams.empty()))
 					m_event((iPlayableService*)this, evUser+12);
 			}
+			/*+++*workaround for mp3 playback problem on some boxes - e.g. xtrend et9200 (if press stop and play or switch to the next track is the state 'playing', but plays not.
+			Restart the player-application or paused and then play the track fix this for once.)*/
+			/*if (!m_paused && codec_tofix)
+			{
+				std::string filename = "/proc/stb/info/boxtype";
+				FILE *f = fopen(filename.c_str(), "rb");
+				if (f)
+				{
+					char boxtype[6];
+					fread(boxtype, 6, 1, f);
+					fclose(f);
+					if (!memcmp(boxtype, "et5000", 6) || !memcmp(boxtype, "et6000", 6) || !memcmp(boxtype, "et6500", 6) || !memcmp(boxtype, "et9000", 6) || !memcmp(boxtype, "et9100", 6) || !memcmp(boxtype, "et9200", 6) || !memcmp(boxtype, "et9500", 6))
+					{
+						eDebug("[eServiceMP3] mp3,aac playback fix for xtrend et5x00,et6x00,et9x00 - set paused and then playing state");
+						GstStateChangeReturn ret;
+						ret = gst_element_set_state (m_gst_playbin, GST_STATE_PAUSED);
+						if (ret != GST_STATE_CHANGE_SUCCESS)
+						{
+							eDebug("[eServiceMP3] mp3 playback fix - failure set paused state - sleep one second before set playing state");
+							sleep(1);
+						}
+						gst_element_set_state (m_gst_playbin, GST_STATE_PLAYING);
+					}
+				}
+			}*/
+			/*+++*/
 			break;
 		}
 		case GST_MESSAGE_ELEMENT:
